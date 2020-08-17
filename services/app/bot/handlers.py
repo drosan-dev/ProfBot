@@ -20,6 +20,44 @@ class NewMessageHandler(object):
         self.token = token
         self.api = vk.API(vk.Session(access_token=token), v='5.122')
 
+    def __get_next_step(self, payload):
+        if payload is None:
+            return None
+
+        button_id = payload.get('button_id')
+        if button_id is None:
+            if payload.get('command') == 'start':
+                return get_first_step()
+            else:
+                return None
+        else:
+            if button_id == -1:
+                step_id = payload.get('step_id')
+                if step_id is None:
+                    return None
+
+                curr_step = get_step(step_id)
+                if curr_step is None:
+                    return get_first_step()
+
+                from_button = curr_step.from_button
+                if from_button is None:
+                    return get_first_step()
+
+                prev_step = from_button.step
+                if prev_step is None:
+                    return get_first_step()
+
+                return prev_step
+            else:
+                clicked_button = get_button(button_id)
+                if clicked_button is None:
+                    return get_first_step()
+
+                new_step = clicked_button.next_step
+                if new_step is None:
+                    return get_first_step()
+
     def handle(self, data):
         """
         Обработка события
@@ -35,24 +73,11 @@ class NewMessageHandler(object):
             return
 
         payload_data = json.loads(payload)
-        button_id = payload_data.get('button_id')
 
-        if button_id is None:
-            if payload_data.get('command') == 'start':
-                new_step = get_first_step()
-            else:
-                return
-        else:
-            if button_id == -1:
-                step_id = payload_data.get('step_id')
-                if step_id is None:
-                    return
+        new_step = self.__get_next_step(payload_data)
 
-                prev_step = get_step(step_id).from_button.step
-                new_step = prev_step
-            else:
-                clicked_button = get_button(button_id)
-                new_step = clicked_button.next_step
+        if new_step is None:
+            return
 
         new_buttons = new_step.buttons
 
