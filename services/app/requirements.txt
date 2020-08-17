@@ -1,0 +1,8 @@
+vk
+flask
+gunicorn
+flask-sqlalchemy
+flask-script
+flask-migrate
+psycopg2
+pymysql
