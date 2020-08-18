@@ -9,6 +9,45 @@ from database import get_first_step, get_button, get_step
 from server import app
 
 
+def _configure_keyboard(buttons: list):
+    """
+    Метод конфигурирования клавиатуры по полученным из БД кнопкам
+    :param buttons: [Button] - Список кнопок
+    :return: BotKeyboard
+    """
+    buttons_matrix = []
+
+    lines_sorted_buttons = sorted(buttons, key=lambda btn: btn.row)  # Сортировка кнопок по номеру строки
+
+    prev_line = -1
+
+    for button in lines_sorted_buttons:
+        if button.row <= prev_line:
+            continue
+
+        line_buttons = list(filter(lambda btn: btn.row == button.row, lines_sorted_buttons))
+
+        buttons_matrix.append([])
+
+        columns_sorted_buttons = sorted(line_buttons, key=lambda btn: btn.column)
+
+        for line_button in columns_sorted_buttons:
+            buttons_matrix[-1].append(line_button)
+
+        prev_line = button.row
+
+    keyboard = BotKeyboard(one_time=False, inline=False)
+
+    for buttons_line in buttons_matrix:
+        keyboard.add_line()
+        for button in buttons_line:
+            keyboard.add_button(BotKeyboardButton(BotKeyboardButtonType(button.type), button.label,
+                                                  BotKeyboardButtonColor(button.color),
+                                                  json.dumps({'button_id': button.id})))
+
+    return keyboard
+
+
 class NewMessageHandler(object):
     """
     Обработчик новых сообщений, нажатий на кнопки с типом отличным от `callback`
@@ -58,6 +97,8 @@ class NewMessageHandler(object):
                 if new_step is None:
                     return get_first_step()
 
+                return new_step
+
     def handle(self, data):
         """
         Обработка события
@@ -81,35 +122,7 @@ class NewMessageHandler(object):
 
         new_buttons = new_step.buttons
 
-        buttons_matrix = []
-
-        lines_sorted_buttons = sorted(new_buttons, key=lambda btn: btn.row)  # Сортировка кнопок по номеру строки
-
-        prev_line = -1
-
-        for button in lines_sorted_buttons:
-            if button.row <= prev_line:
-                continue
-
-            line_buttons = list(filter(lambda btn: btn.row == button.row, lines_sorted_buttons))
-
-            buttons_matrix.append([])
-
-            columns_sorted_buttons = sorted(line_buttons, key=lambda btn: btn.column)
-
-            for line_button in columns_sorted_buttons:
-                buttons_matrix[-1].append(line_button)
-
-            prev_line = button.row
-
-        keyboard = BotKeyboard(one_time=True, inline=False)
-
-        for buttons_line in buttons_matrix:
-            keyboard.add_line()
-            for button in buttons_line:
-                keyboard.add_button(BotKeyboardButton(BotKeyboardButtonType(button.type), button.label,
-                                                      BotKeyboardButtonColor(button.color),
-                                                      json.dumps({'button_id': button.id})))
+        keyboard = _configure_keyboard(new_buttons)
 
         if new_step.from_button is not None:
             keyboard.add_line()
@@ -147,32 +160,7 @@ class JoinGroupHandler(object):
         first_step = get_first_step()
         step_buttons = first_step.buttons
 
-        buttons_matrix = []
-
-        lines_sorted_buttons = sorted(step_buttons, key=lambda btn: btn.row)  # Сортировка кнопок по номеру строки
-        prev_line = -1
-
-        for button in lines_sorted_buttons:
-            if button.row <= prev_line:
-                continue
-
-            line_buttons = list(filter(lambda btn: btn.row == button.row, lines_sorted_buttons))
-            buttons_matrix.append([])
-            columns_sorted_buttons = sorted(line_buttons, key=lambda btn: btn.column)
-
-            for line_button in columns_sorted_buttons:
-                buttons_matrix[-1].append(line_button)
-
-            prev_line = button.row
-
-        keyboard = BotKeyboard(one_time=True, inline=False)
-
-        for buttons_line in buttons_matrix:
-            keyboard.add_line()
-            for button in buttons_line:
-                keyboard.add_button(BotKeyboardButton(BotKeyboardButtonType(button.type), button.label,
-                                                      BotKeyboardButtonColor(button.color),
-                                                      json.dumps({'button_id': button.id})))
+        keyboard = _configure_keyboard(step_buttons)
 
         try:
             self.api.messages.send(access_token=self.token, user_id=str(user_id), message="Привет, я Профбот",
