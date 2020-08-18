@@ -67,3 +67,65 @@ class Button(db.Model):
 
     def __repr__(self):
         return "<buttons {}>".format(self.id)
+
+
+class Role(db.Model):
+    """
+    Модель роли пользователя в админке
+    Attributes:
+        id: int - ID роли
+        name: str - Название роли
+        users: [User] - Список пользователей с этой ролью
+        created_at: datetime - Дата создания роли
+        updated_at: datetime - Дата последнего изменения роли
+    """
+    __tablename__ = 'roles'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(), nullable=False, unique=True)
+
+    users = db.relationship('User', backref='role', lazy=True, foreign_keys='User.role_id')
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return "<roles {}>".format(self.id)
+
+
+class User(db.Model):
+    """
+    Модель роли пользователя в админке
+    Attributes:
+        id: int - ID пользователя
+        email: str - Email адрес пользователя
+        password: str - Hash папроль пользователя
+        name: str - Имя пользователя
+        surname: str - Фамилия пользователя
+        role_id: int - ID роли пользователя
+        role: Role - Роль пользователя
+        created_at: datetime - Дата создания роли
+        updated_at: datetime - Дата последнего изменения роли
+    """
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(), nullable=False, unique=True)
+    password = db.Column(db.String(), nullable=False)
+    name = db.Column(db.String(), nullable=False)
+    surname = db.Column(db.String(), nullable=False)
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return "<roles {}>".format(self.id)
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'email': self.email,
+            'name': self.name,
+            'surname': self.surname,
+            'role_name': self.role.name
+        }
