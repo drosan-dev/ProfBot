@@ -31,6 +31,13 @@ class Step(db.Model):
     def __repr__(self):
         return "<steps {}>".format(self.id)
 
+    def serialize(self):
+        return {
+            'id': self.id,
+            'text': self.text,
+            'buttons': list(map(lambda btn: btn.serialize(), self.buttons))
+        }
+
 
 class Button(db.Model):
     """
@@ -67,6 +74,17 @@ class Button(db.Model):
 
     def __repr__(self):
         return "<buttons {}>".format(self.id)
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'type': self.type,
+            'color': self.color,
+            'label': self.label,
+            'row': self.row,
+            'column': self.column,
+            'to_step_id': self.to_step_id
+        }
 
 
 class Role(db.Model):

@@ -80,3 +80,37 @@ def user(user_id):
 
     elif request.method == 'DELETE':
         return users_delete_handler(user_id, current_user_id)
+
+
+@app.route('/steps', methods=['GET', 'POST'])
+@jwt_required
+def steps():
+    current_user_id = get_jwt_identity()
+
+    if request.method == 'GET':
+        return steps_list_handler(current_user_id)
+    elif request.method == 'POST':
+        if not request.is_json:
+            return jsonify({"error": "Missing JSON in request"}), 400
+        return steps_create_handler(request.json, current_user_id)
+
+
+@app.route('/steps/<int:step_id>', methods=['GET', 'PUT', 'DELETE'])
+@jwt_required
+def step(step_id):
+    current_user_id = get_jwt_identity()
+    if request.method == 'GET':
+        return steps_retrieve_handler(step_id, current_user_id)
+    elif request.method == 'PUT':
+        if not request.is_json:
+            return jsonify({"error": "Missing JSON in request"}), 400
+        return steps_update_handler(step_id, current_user_id, request.json)
+    elif request.method == 'DELETE':
+        return steps_delete_handler(step_id, current_user_id)
+
+
+@app.route('/buttons/<int:button_id>', methods=['DELETE'])
+@jwt_required
+def button(button_id):
+    current_user_id = get_jwt_identity()
+    return buttons_delete_handler(button_id, current_user_id)

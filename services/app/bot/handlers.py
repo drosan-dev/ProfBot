@@ -32,7 +32,8 @@ def _configure_keyboard(buttons: list):
         columns_sorted_buttons = sorted(line_buttons, key=lambda btn: btn.column)
 
         for line_button in columns_sorted_buttons:
-            buttons_matrix[-1].append(line_button)
+            if line_button.next_step is not None:
+                buttons_matrix[-1].append(line_button)
 
         prev_line = button.row
 

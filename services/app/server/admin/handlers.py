@@ -2,7 +2,8 @@ import datetime
 from flask import jsonify
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import create_access_token, create_refresh_token
-from .validators import LoginValidator, UserCreateValidator, UserUpdateValidator
+from .validators import LoginValidator, UserCreateValidator, UserUpdateValidator, StepCreateValidator,\
+    StepUpdateValidator, ButtonCreateValidator, ButtonUpdateValidator
 import database
 
 
@@ -200,3 +201,159 @@ def users_update_handler(user_id, current_user_id, user_data):
     database.update_user(existed_user)
 
     return jsonify(existed_user.serialize()), 200
+
+
+def steps_create_handler(json, user_id):
+    """
+    Обработчик запроса создания шага
+    :param json: dict - JSON данные запроса
+    :param user_id: int - ID пользователя
+    :return: JSON тело ответа, HTTP статус
+    """
+    current_user = database.get_user(user_id)
+    if current_user is None:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    is_valid, error = StepCreateValidator().is_valid(json)
+    if not is_valid:
+        return jsonify({'error': error}), 400
+
+    new_step = database.create_step(text=json.get('text'))
+
+    buttons = json.get('buttons')
+
+    if buttons is not None:
+        for button in buttons:
+            database.create_button(button_type=button['type'], label=button['label'],
+                                   color=button['color'], row=button['row'], column=button['column'],
+                                   step_id=new_step.id, to_step_id=button['to_step_id'])
+
+    return jsonify(new_step.serialize()), 201
+
+
+def steps_list_handler(user_id):
+    """
+    Обработчик запроса получения списка шагов
+    :param user_id: int - ID пользователя
+    :return: JSON тело ответа, HTTP статус
+    """
+    current_user = database.get_user(user_id)
+    if current_user is None:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    return jsonify(list(map(lambda step: step.serialize(), database.get_steps_list()))), 200
+
+
+def steps_retrieve_handler(step_id, user_id):
+    """
+    Обработчик запроса получения шага по ID
+    :param step_id: int - ID шага
+    :param user_id: int - ID пользователя
+    :return: JSON тело ответа, HTTP статус
+    """
+    current_user = database.get_user(user_id)
+    if current_user is None:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    existed_step = database.get_step(step_id)
+    if existed_step is None:
+        return jsonify(error='Step not found'), 404
+
+    return jsonify(existed_step.serialize()), 200
+
+
+def steps_delete_handler(step_id, user_id):
+    """
+    Обработчик запроса удаления шага
+    :param step_id: int - ID шага
+    :param user_id: int - ID пользователя
+    :return: JSON тело ответа, HTTP статус
+    """
+    current_user = database.get_user(user_id)
+    if current_user is None:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    existed_step = database.get_step(step_id)
+    if existed_step is None:
+        return jsonify(error='Step not found'), 404
+
+    database.delete_step(step_id)
+
+    return jsonify(None), 204
+
+
+def steps_update_handler(step_id, user_id, json):
+    """
+    Обработчик запороса обновления шага
+    :param step_id: int - ID шага
+    :param user_id: int - ID пользователя
+    :param json: dict - JSON данные запроса
+    :return: JSON тело ответа, HTTP статус
+    """
+    current_user = database.get_user(user_id)
+    if current_user is None:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    existed_step = database.get_step(step_id)
+    if existed_step is None:
+        return jsonify(error='Step not found'), 404
+
+    is_valid, error = StepUpdateValidator().is_valid(json)
+    if not is_valid:
+        return jsonify({'error': error}), 400
+
+    buttons = json.get('buttons')
+
+    if buttons is not None:
+        for button in buttons:
+            button_id = button.get('id')
+            if button_id is None:
+                is_valid, error = ButtonCreateValidator().is_valid(button)
+                if not is_valid:
+                    return jsonify({'error': error}), 400
+
+                database.create_button(button_type=button['type'], label=button['label'],
+                                       color=button['color'], row=button['row'], column=button['column'],
+                                       step_id=step_id, to_step_id=button['to_step_id'])
+            else:
+                existed_button = database.get_button(button_id)
+                if existed_button is None:
+                    return jsonify(error='Button not found'), 404
+
+                is_valid, error = ButtonUpdateValidator().is_valid(button)
+                if not is_valid:
+                    return jsonify({'error': error}), 400
+
+                existed_button.type = button.get('type', existed_button.type)
+                existed_button.color = button.get('color', existed_button.color)
+                existed_button.label = button.get('label', existed_button.label)
+                existed_button.row = button.get('row', existed_button.row)
+                existed_button.column = button.get('column', existed_button.column)
+                existed_button.to_step_id = button.get('to_step_id', existed_button.to_step_id)
+
+                database.update_button(existed_button)
+
+    existed_step.text = json.get('text', existed_step.text)
+    database.update_step(existed_step)
+
+    return jsonify(existed_step.serialize()), 200
+
+
+def buttons_delete_handler(button_id, user_id):
+    """
+    Обработчик запролса на удаление кнопки
+    :param button_id: int - ID кнопки
+    :param user_id: int - ID пользователя
+    :return: JSON тело ответа, HTTP статус
+    """
+    current_user = database.get_user(user_id)
+    if current_user is None:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    existed_button = database.get_button(button_id)
+    if existed_button is None:
+        return jsonify(error='Button not found'), 404
+
+    database.delete_button(button_id)
+
+    return jsonify(None), 204

@@ -145,3 +145,221 @@ class UserUpdateValidator(object):
             return False, "New password cannot be null"
 
         return True, None
+
+
+class StepCreateValidator(object):
+    """
+    Валидатор запроса на создание нового шага
+    Attributes:
+        user_schema: dict - Словарь правил для валидации запроса
+    """
+    user_schema = {
+        "type": "object",
+        "properties": {
+            "text": {
+                "type": "string"
+            },
+            "buttons": {
+                "type": ["array", "null"],
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string"
+                        },
+                        "color": {
+                            "type": "string"
+                        },
+                        "label": {
+                            "type": "string"
+                        },
+                        "row": {
+                            "type": "integer"
+                        },
+                        "column": {
+                            "type": "integer"
+                        },
+                        "to_step_id": {
+                            "type": ["integer", "null"]
+                        }
+                    },
+                    "required": ["type", "color", "label", "row", "column", "to_step_id"]
+                }
+            }
+        },
+        "required": ["text"],
+        "additionalProperties": False
+    }
+
+    def is_valid(self, data):
+        """
+        Метод для валидации запроса
+        :param data: dict - JSON данные запроса
+        :return: (bool, str) - (True - если данные валидные, Текстовое описание ошибки)
+        """
+        try:
+            validate(data, self.user_schema)
+        except ValidationError as e:
+            return False, e.message
+        except SchemaError as e:
+            return False, e.message
+        return True, None
+
+
+class StepUpdateValidator(object):
+    """
+    Валидатор запроса на обновление шага
+    Attributes:
+        user_schema: dict - Словарь правил для валидации запроса
+    """
+    user_schema = {
+        "type": "object",
+        "properties": {
+            "text": {
+                "type": "string"
+            },
+            "buttons": {
+                "type": ["array", "null"],
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": ["integer", "null"]
+                        },
+                        "type": {
+                            "type": "string"
+                        },
+                        "color": {
+                            "type": "string"
+                        },
+                        "label": {
+                            "type": "string"
+                        },
+                        "row": {
+                            "type": "integer"
+                        },
+                        "column": {
+                            "type": "integer"
+                        },
+                        "to_step_id": {
+                            "type": ["integer", "null"]
+                        }
+                    },
+                    "required": []
+                }
+            }
+        },
+        "required": [],
+        "additionalProperties": False
+    }
+
+    def is_valid(self, data):
+        """
+        Метод для валидации запроса
+        :param data: dict - JSON данные запроса
+        :return: (bool, str) - (True - если данные валидные, Текстовое описание ошибки)
+        """
+        try:
+            validate(data, self.user_schema)
+        except ValidationError as e:
+            return False, e.message
+        except SchemaError as e:
+            return False, e.message
+        return True, None
+
+
+class ButtonCreateValidator(object):
+    """
+    Валидатор запроса на создание кнопки
+    Attributes:
+        user_schema: dict - Словарь правил для валидации запроса
+    """
+    user_schema = {
+        "type": "object",
+        "properties": {
+            "type": {
+                "type": "string"
+            },
+            "color": {
+                "type": "string"
+            },
+            "label": {
+                "type": "string"
+            },
+            "row": {
+                "type": "integer"
+            },
+            "column": {
+                "type": "integer"
+            },
+            "to_step_id": {
+                "type": ["integer", "null"]
+            }
+        },
+        "required": ["type", "color", "label", "row", "column", "to_step_id"],
+        "additionalProperties": False
+    }
+
+    def is_valid(self, data):
+        """
+        Метод для валидации запроса
+        :param data: dict - JSON данные запроса
+        :return: (bool, str) - (True - если данные валидные, Текстовое описание ошибки)
+        """
+        try:
+            validate(data, self.user_schema)
+        except ValidationError as e:
+            return False, e.message
+        except SchemaError as e:
+            return False, e.message
+        return True, None
+
+
+class ButtonUpdateValidator(object):
+    """
+    Валидатор запроса на обновление кнопки
+    Attributes:
+        user_schema: dict - Словарь правил для валидации запроса
+    """
+    user_schema = {
+        "type": "object",
+        "properties": {
+            "id": {
+                "type": "integer"
+            },
+            "type": {
+                "type": "string"
+            },
+            "color": {
+                "type": "string"
+            },
+            "label": {
+                "type": "string"
+            },
+            "row": {
+                "type": "integer"
+            },
+            "column": {
+                "type": "integer"
+            },
+            "to_step_id": {
+                "type": ["integer", "null"]
+            }
+        },
+        "required": ["id"],
+        "additionalProperties": False
+    }
+
+    def is_valid(self, data):
+        """
+        Метод для валидации запроса
+        :param data: dict - JSON данные запроса
+        :return: (bool, str) - (True - если данные валидные, Текстовое описание ошибки)
+        """
+        try:
+            validate(data, self.user_schema)
+        except ValidationError as e:
+            return False, e.message
+        except SchemaError as e:
+            return False, e.message
+        return True, None
