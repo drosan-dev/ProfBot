@@ -31,7 +31,7 @@ def login_handler(json):
     access_token = create_access_token(identity=existed_user.id, expires_delta=datetime.timedelta(minutes=10))
     refresh_token = create_refresh_token(identity=existed_user.id, expires_delta=datetime.timedelta(days=10))
 
-    return jsonify(access_token=access_token, refresh_token=refresh_token), 200
+    return jsonify(id=existed_user.id, access_token=access_token, refresh_token=refresh_token), 200
 
 
 def refresh_handler(current_user_id):
@@ -47,7 +47,7 @@ def refresh_handler(current_user_id):
     access_token = create_access_token(identity=current_user_id, expires_delta=datetime.timedelta(minutes=10))
     refresh_token = create_refresh_token(identity=current_user_id, expires_delta=datetime.timedelta(days=10))
 
-    return jsonify(access_token=access_token, refresh_token=refresh_token), 200
+    return jsonify(id=current_user_id, access_token=access_token, refresh_token=refresh_token), 200
 
 
 def user_create_handler(json, current_user_id):
@@ -84,8 +84,7 @@ def user_create_handler(json, current_user_id):
     created_user = database.create_user(email, Bcrypt().generate_password_hash(password).decode('utf-8'), name,
                                         surname, role_id)
 
-    return jsonify(id=created_user.id, email=created_user.email, name=created_user.name, surname=created_user.surname,
-                   role_name=created_user.role.name), 201
+    return jsonify(created_user.serialize()), 201
 
 
 def users_list_handler(current_user_id):
@@ -100,7 +99,7 @@ def users_list_handler(current_user_id):
     if current_user.role.name.lower() != 'admin':
         return jsonify({'error': 'Only admin can get users list'}), 403
 
-    return jsonify(list(map(lambda user: user.serialize(), database.get_users_list()))), 200
+    return jsonify(list(map(lambda user: user.serialize_list(), database.get_users_list()))), 200
 
 
 def users_retrieve_handler(user_id, current_user_id):
@@ -136,7 +135,7 @@ def users_delete_handler(user_id, current_user_id):
     current_user = database.get_user(current_user_id)
     if current_user is None:
         return jsonify({'error': 'Unauthorized'}), 401
-    if current_user.role.name.lower() != 'admin':
+    if current_user.role.name.lower() != 'admin' and current_user_id != user_id:
         return jsonify({'error': 'Only admin can delete users'}), 403
 
     existed_user = database.get_user(user_id)
@@ -157,9 +156,10 @@ def users_update_handler(user_id, current_user_id, user_data):
     :return: JSON тело ответа, HTTP статус
     """
     current_user = database.get_user(current_user_id)
+    is_admin = current_user.role.name.lower() == 'admin'
     if current_user is None:
         return jsonify({'error': 'Unauthorized'}), 401
-    if current_user.role.name.lower() != 'admin' and current_user_id != user_id:
+    if not is_admin and current_user_id != user_id:
         return jsonify({'error': 'Only admin can update user info'}), 403
 
     if user_id == current_user_id:
@@ -169,7 +169,7 @@ def users_update_handler(user_id, current_user_id, user_data):
         if existed_user is None:
             return jsonify(error='User not found'), 404
 
-    is_valid, error = UserUpdateValidator().is_valid(user_data)
+    is_valid, error = UserUpdateValidator().is_valid(user_data, is_admin=is_admin)
     if not is_valid:
         return jsonify({'error': error}), 400
 
@@ -241,7 +241,7 @@ def steps_list_handler(user_id):
     if current_user is None:
         return jsonify({'error': 'Unauthorized'}), 401
 
-    return jsonify(list(map(lambda step: step.serialize(), database.get_steps_list()))), 200
+    return jsonify(list(map(lambda step: step.serialize_list(), database.get_steps_list()))), 200
 
 
 def steps_retrieve_handler(step_id, user_id):
@@ -304,6 +304,8 @@ def steps_update_handler(step_id, user_id, json):
 
     buttons = json.get('buttons')
 
+    to_delete_buttons = list(map(lambda btn: btn.id, existed_step.buttons))
+
     if buttons is not None:
         for button in buttons:
             button_id = button.get('id')
@@ -316,6 +318,7 @@ def steps_update_handler(step_id, user_id, json):
                                        color=button['color'], row=button['row'], column=button['column'],
                                        step_id=step_id, to_step_id=button['to_step_id'])
             else:
+                to_delete_buttons.remove(button_id)
                 existed_button = database.get_button(button_id)
                 if existed_button is None:
                     return jsonify(error='Button not found'), 404
@@ -334,6 +337,10 @@ def steps_update_handler(step_id, user_id, json):
                 database.update_button(existed_button)
 
     existed_step.text = json.get('text', existed_step.text)
+
+    for button_id in to_delete_buttons:
+        database.delete_button(button_id)
+
     database.update_step(existed_step)
 
     return jsonify(existed_step.serialize()), 200

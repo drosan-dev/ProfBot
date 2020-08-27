@@ -14,11 +14,11 @@ class LoginValidator(object):
         "properties": {
             "email": {
                 "type": "string",
-                "format": "email"
+                "format": "email",
             },
             "password": {
                 "type": "string",
-                "minLength": 6
+                "minLength": 6,
             }
         },
         "required": ["email", "password"],
@@ -51,19 +51,19 @@ class UserCreateValidator(object):
         "properties": {
             "email": {
                 "type": "string",
-                "format": "email"
+                "format": "email",
             },
             "password": {
                 "type": "string",
-                "minLength": 6
+                "minLength": 6,
             },
             "name": {
                 "type": "string",
-                "minLength": 2
+                "minLength": 2,
             },
             "surname": {
                 "type": "string",
-                "minLength": 2
+                "minLength": 2,
             },
             "role_id": {
                 "type": "integer"
@@ -125,10 +125,11 @@ class UserUpdateValidator(object):
         "additionalProperties": False
     }
 
-    def is_valid(self, data):
+    def is_valid(self, data, is_admin):
         """
         Метод для валидации запроса
         :param data: dict - JSON данные запроса
+        :param is_admin: boolean - Запрос от админа или нет
         :return: (bool, str) - (True - если данные валидные, Текстовое описание ошибки)
         """
         try:
@@ -138,7 +139,7 @@ class UserUpdateValidator(object):
         except SchemaError as e:
             return False, e.message
 
-        if data.get('new_password') is not None and data.get('old_password') is None:
+        if data.get('new_password') is not None and (not is_admin and data.get('old_password') is None):
             return False, "Old password cannot be null"
 
         if data.get('new_password') is None and data.get('old_password') is not None:

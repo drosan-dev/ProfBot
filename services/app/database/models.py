@@ -31,11 +31,23 @@ class Step(db.Model):
     def __repr__(self):
         return "<steps {}>".format(self.id)
 
+    def serialize_list(self):
+        return {
+            'id': self.id,
+            'text': self.text,
+            'unreachable': self.from_button is None,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at
+        }
+
     def serialize(self):
         return {
             'id': self.id,
             'text': self.text,
-            'buttons': list(map(lambda btn: btn.serialize(), self.buttons))
+            'buttons': list(map(lambda btn: btn.serialize(), self.buttons)),
+            'unreachable': self.from_button is None,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at
         }
 
 
@@ -109,6 +121,12 @@ class Role(db.Model):
     def __repr__(self):
         return "<roles {}>".format(self.id)
 
+    def serialize(self):
+        return {
+            'id': self.id,
+            'name': self.name
+        }
+
 
 class User(db.Model):
     """
@@ -139,11 +157,24 @@ class User(db.Model):
     def __repr__(self):
         return "<roles {}>".format(self.id)
 
+    def serialize_list(self):
+        return {
+            'id': self.id,
+            'email': self.email,
+            'name': self.name,
+            'surname': self.surname,
+            'role': self.role.serialize(),
+            'created_at': self.created_at,
+            'updated_at': self.updated_at
+        }
+
     def serialize(self):
         return {
             'id': self.id,
             'email': self.email,
             'name': self.name,
             'surname': self.surname,
-            'role_name': self.role.name
+            'role': self.role.serialize(),
+            'created_at': self.created_at,
+            'updated_at': self.updated_at
         }

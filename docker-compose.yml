@@ -8,21 +8,31 @@ services:
     environment:
       - PGDATA=/var/lib/postgresql/pgdata
     ports:
-      - 5433:5432
+      - 5002:5432
     env_file:
       - ./db.dev.env
 
   app:
     build:
       context: ./services/app
-    command: gunicorn --bind 0.0.0.0:5000 run:app
+    command: gunicorn --bind 0.0.0.0:5001 run:app
     restart: always
     ports:
-      - 5000:5000
+      - 5001:5001
     env_file:
       - ./app.dev.env
     depends_on:
       - db
+
+  admin:
+    build:
+      context: ./services/profbot-admin
+    command: serve -s build
+    restart: always
+    ports:
+      - 5000:5000
+    depends_on:
+      - app
 
   nginx:
     build:
@@ -31,6 +41,7 @@ services:
       - 80:80
     depends_on:
       - app
+      - admin
 
 volumes:
   postgres_data:

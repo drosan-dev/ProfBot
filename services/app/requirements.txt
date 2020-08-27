@@ -4,6 +4,7 @@ gunicorn
 flask-sqlalchemy
 flask-script
 flask-migrate
+flask-cors
 psycopg2
 flask-jwt-extended
 Flask_Bcrypt

@@ -8,7 +8,7 @@ def get_steps_list():
     Получение списка шагов бота
     :return: [Step]
     """
-    return Step.query.all()
+    return Step.query.order_by(Step.created_at.desc()).all()
 
 
 def get_step(step_id: int):
@@ -158,7 +158,7 @@ def get_users_list():
     Получение списка пользователей админки
     :return: [User]
     """
-    return User.query.all()
+    return User.query.order_by(User.created_at.desc()).all()
 
 
 def get_user(user_id):
